@@ -13,6 +13,7 @@ ACTIVE_LINUX_BRANCH="4.18"
 YOCTO_BRANCH="sumo"
 YOCTO_LAYERS="meta-openembedded meta-qt5 meta-raspberrypi meta-security"
 YOCTO_DIR=${BASE_DIR}/poky-${YOCTO_BRANCH}
+YOCTO_COMMIT_LOG="${LOG_DIR}/yocto-commits-${DATE}"
 
 BOARDS="atom bbb duovero odroid-c2 wandboard"
 
@@ -45,12 +46,10 @@ update_yocto_repos()
 
     cd ${YOCTO_DIR}
 
-    yocto_commit_log="${LOG_DIR}/yocto-commits-${DATE}"
-
     echo "Checking poky-${YOCTO_BRANCH}" >> ${LOG}
     git checkout ${YOCTO_BRANCH} >> ${LOG} 2>&1
     git pull >> ${LOG} 2>&1
-    echo "poky $(git log --oneline | head -1 | awk '{ print $1; }')" > ${yocto_commit_log}
+    echo "poky $(git log --oneline | head -1 | awk '{ print $1; }')" > ${YOCTO_COMMIT_LOG}
 
     for layer in ${YOCTO_LAYERS}
     do
@@ -63,7 +62,7 @@ update_yocto_repos()
         echo "Checking ${layer}" >> ${LOG}
         git checkout ${YOCTO_BRANCH} >> ${LOG} 2>&1
         git pull >> ${LOG} 2>&1
-        echo "${layer} $(git log --oneline | head -1 | awk '{ print $1; }')" >> ${yocto_commit_log}
+        echo "${layer} $(git log --oneline | head -1 | awk '{ print $1; }')" >> ${YOCTO_COMMIT_LOG}
         cd ..
     done
 }
@@ -103,6 +102,35 @@ check_kernels()
                 echo "$board kernel $branch OK" >> ${LOG}
             else
                 echo "$board kernel $branch STALE" >> ${LOG}
+            fi
+        done
+    done
+}
+
+update_meta_layer_readmes()
+{
+    for board in ${BOARDS}
+    do
+        readme="${BASE_DIR}/${board}/meta-${board}/README.md"
+
+        commit=$(grep poky ${YOCTO_COMMIT_LOG})
+
+        grep -q -e "${commit}" ${readme}
+
+        if [ $? -eq 1 ]; then
+            echo "Updating ${readme} for poky commit" >> ${LOG}
+            sed -i "s:^    poky.*:    ${commit}:" ${readme}
+        fi
+
+        for layer in ${YOCTO_LAYERS}
+        do
+            commit=$(grep ${layer} ${YOCTO_COMMIT_LOG})
+
+            grep -q -e "${commit}" ${readme}
+
+            if [ $? -eq 1 ]; then
+                echo "Updating ${readme} for ${layer} commit" >> ${LOG}
+                sed -i "s:^    ${layer}.*:    ${commit}:" ${readme}
             fi
         done
     done
@@ -155,7 +183,7 @@ cleanup_old_logs()
 }
 
 ########################################
-# the main flow 
+# the main flow
 ########################################
 
 mkdir -p ${LOG_DIR}
@@ -172,6 +200,8 @@ update_linux_repos
 update_yocto_repos
 
 check_kernels
+
+update_meta_layer_readmes
 
 update_meta_layer_kernels
 
