@@ -45,10 +45,12 @@ update_yocto_repos()
 
     cd ${YOCTO_DIR}
 
+    yocto_commit_log="${LOG_DIR}/yocto-commits-${DATE}"
+
     echo "Checking poky-${YOCTO_BRANCH}" >> ${LOG}
     git checkout ${YOCTO_BRANCH} >> ${LOG} 2>&1
     git pull >> ${LOG} 2>&1
-    git log | head -1 | awk '{ print $2 }' > ${LOG_DIR}/poky-${YOCTO_BRANCH}-${DATE}
+    echo "poky $(git log --oneline | head -1 | awk '{ print $1; }')" > ${yocto_commit_log}
 
     for layer in ${YOCTO_LAYERS}
     do
@@ -57,11 +59,11 @@ update_yocto_repos()
             exit 1
         fi
 
-        cd $layer
-        echo "Checking $layer" >> ${LOG}
+        cd ${layer}
+        echo "Checking ${layer}" >> ${LOG}
         git checkout ${YOCTO_BRANCH} >> ${LOG} 2>&1
         git pull >> ${LOG} 2>&1
-	git log | head -1 | awk '{ print $2}' > ${LOG_DIR}/${layer}-${DATE}
+        echo "${layer} $(git log --oneline | head -1 | awk '{ print $1; }')" >> ${yocto_commit_log}
         cd ..
     done
 }
