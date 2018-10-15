@@ -124,13 +124,17 @@ update_meta_layer_readmes()
 
         for layer in ${YOCTO_LAYERS}
         do
-            commit=$(grep ${layer} ${YOCTO_COMMIT_LOG})
+            grep -q ${layer} ${readme}
 
-            grep -q -e "${commit}" ${readme}
+            if [ $? -eq 0 ]; then
+                commit=$(grep ${layer} ${YOCTO_COMMIT_LOG})
 
-            if [ $? -eq 1 ]; then
-                echo "Updating ${readme} for ${layer} commit" >> ${LOG}
-                sed -i "s:^    ${layer}.*:    ${commit}:" ${readme}
+                grep -q -e "${commit}" ${readme}
+
+                if [ $? -eq 1 ]; then
+                    echo "Updating ${readme} for ${layer} commit" >> ${LOG}
+                    sed -i "s:^    ${layer}.*:    ${commit}:" ${readme}
+                fi
             fi
         done
     done
