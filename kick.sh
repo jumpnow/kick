@@ -7,8 +7,8 @@ DATE=$(date +%Y%m%d)
 LOG=${LOG_DIR}/kick-${DATE}.log
 
 LINUX_DIR=${BASE_DIR}/linux
-LINUX_BRANCHES="4.14 4.18"
-ACTIVE_LINUX_BRANCH="4.18"
+LINUX_BRANCHES="4.14 4.18 4.19"
+ACTIVE_LINUX_BRANCH="4.19"
 
 YOCTO_BRANCH="sumo"
 YOCTO_LAYERS="meta-openembedded meta-qt5 meta-raspberrypi meta-security"
