@@ -7,11 +7,11 @@ DATE=$(date +%Y%m%d)
 LOG=${LOG_DIR}/kick-${DATE}.log
 
 LINUX_DIR=${BASE_DIR}/linux
-LINUX_BRANCHES="4.14 4.18 4.19"
+LINUX_BRANCHES="4.14 4.19"
 ACTIVE_LINUX_BRANCH="4.19"
 
-YOCTO_BRANCH="sumo"
-YOCTO_LAYERS="meta-openembedded meta-qt5 meta-raspberrypi meta-security"
+YOCTO_BRANCH="thud"
+YOCTO_LAYERS="meta-openembedded meta-qt5"
 YOCTO_DIR=${BASE_DIR}/poky-${YOCTO_BRANCH}
 YOCTO_COMMIT_LOG="${LOG_DIR}/yocto-commits-${DATE}"
 
