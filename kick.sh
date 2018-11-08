@@ -132,7 +132,7 @@ update_meta_layer_readmes()
                 grep -q -e "${commit}" ${readme}
 
                 if [ $? -eq 1 ]; then
-                    echo "Updating ${readme} for ${layer} commit" >> ${LOG}
+                    echo "${board} ${layer} UPDATED" >> ${LOG}
                     sed -i "s:^    ${layer}.*:    ${commit}:" ${readme}
                 fi
             fi
