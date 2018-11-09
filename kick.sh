@@ -162,14 +162,14 @@ update_meta_layer_kernels()
     done
 }
 
-rebuild_active_kernels()
+rebuild_images()
 {
     for board in ${BOARDS}
     do
         grep -q "${board} kernel ${branch} STALE" $LOG
 
         if [ $? -eq 0 ]; then
-            echo "Rebuilding console image for ${board}" >> ${LOG}
+            echo "Rebuilding kernel and console image for ${board}" >> ${LOG}
             result=$( source ${YOCTO_DIR}/oe-init-build-env ${BASE_DIR}/${board}/build && \
               bitbake -c cleansstate console-image && \
               bitbake -c cleansstate virtual/kernel && \
@@ -177,6 +177,18 @@ rebuild_active_kernels()
               echo "Finished building console image for ${board}" >> ${LOG}; )
 
             echo "Result $? : $result" >> ${LOG}
+        else
+            grep "UPDATED" $LOG | grep -q "${board}"
+
+            if [ $? -eq 0 ]; then
+                echo "Rebuilding console image for ${board}" >> ${LOG}
+                result=$( source ${YOCTO_DIR}/oe-init-build-env ${BASE_DIR}/${board}/build && \
+                  bitbake -c cleansstate console-image && \
+                  bitbake console-image && \
+                  echo "Finished building console image for ${board}" >> ${LOG}; )
+
+                echo "Result $? : $result" >> ${LOG}
+            fi
         fi
     done
 }
@@ -209,7 +221,7 @@ update_meta_layer_readmes
 
 update_meta_layer_kernels
 
-rebuild_active_kernels
+rebuild_images
 
 cleanup_old_logs
 
