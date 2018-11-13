@@ -118,7 +118,7 @@ update_meta_layer_readmes()
         grep -q -e "${commit}" ${readme}
 
         if [ $? -eq 1 ]; then
-            echo "Updating ${readme} for poky commit" >> ${LOG}
+            echo "${board} poky UPDATED" >> ${LOG}
             sed -i "s:^    poky.*:    ${commit}:" ${readme}
         fi
 
