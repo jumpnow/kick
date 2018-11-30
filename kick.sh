@@ -271,7 +271,7 @@ if [ ! -d ${LOG_DIR} ]; then
     exit 1
 fi
 
-echo "kick start: $(date)" >> ${LOG}
+echo "kick start: $(date)" > ${LOG}
 
 update_linux_stable
 
