@@ -240,7 +240,7 @@ rebuild_images()
             echo "Result $? : $result" >> ${LOG}
         else
             # only building console images so don't rebuild if only meta-qt5 changes
-            grep "UPDATED" $LOG | grep -q "${board}" | grep -v meta-qt5
+            grep "UPDATED" $LOG | grep -v meta-qt5 | grep -q "${board}"
 
             if [ $? -eq 0 ]; then
                 echo "Rebuilding console image for ${board}" >> ${LOG}
