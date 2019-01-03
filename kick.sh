@@ -249,7 +249,9 @@ rebuild_images()
                   bitbake console-image && \
                   echo "Finished building console image for ${board}" >> ${LOG}; )
 
-                echo "Result $? : $result" >> ${LOG}
+                if [ $? -ne 0 ]; then
+                    echo "Result $? : $result" >> ${LOG}
+                fi
             fi
         fi
     done
