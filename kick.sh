@@ -83,6 +83,12 @@ update_yocto_repos()
         git checkout ${YOCTO_BRANCH} >> ${LOG} 2>&1
         git pull >> ${LOG} 2>&1
         echo "${layer} $(git log --oneline | head -1 | awk '{ print $1; }')" >> ${YOCTO_COMMIT_LOG}
+
+        # until the nmap patches make it to thud
+        if [ ${layer} == "meta-openembedded" ]; then
+            git checkout local >> ${LOG} 2>&1
+        fi
+
         cd ..
     done
 }
