@@ -7,17 +7,17 @@ DATE=$(date +%Y%m%d)
 LOG=${LOG_DIR}/kick-${DATE}.log
 
 LINUX_DIR=${BASE_DIR}/linux
-LINUX_BRANCHES="4.14 4.19 4.20"
-ACTIVE_LINUX_BRANCH="4.20"
+LINUX_BRANCHES="4.19 5.0 5.1"
+ACTIVE_LINUX_BRANCH="5.1"
 
-RPI_LINUX_BRANCH="4.14"
+RPI_LINUX_BRANCH="4.19"
 
-YOCTO_BRANCH="thud"
-YOCTO_LAYERS="meta-openembedded meta-qt5 meta-raspberrypi"
+YOCTO_BRANCH="warrior"
+YOCTO_LAYERS="meta-openembedded meta-qt5 meta-raspberrypi meta-security"
+BOARDS="atom bbb duovero odroid-c2 rpi wandboard"
+
 YOCTO_DIR=${BASE_DIR}/poky-${YOCTO_BRANCH}
 YOCTO_COMMIT_LOG="${LOG_DIR}/yocto-commits-${DATE}"
-
-BOARDS="atom bbb duovero odroid-c2 rpi wandboard"
 
 update_linux_stable()
 {
@@ -83,11 +83,6 @@ update_yocto_repos()
         git checkout ${YOCTO_BRANCH} >> ${LOG} 2>&1
         git pull >> ${LOG} 2>&1
         echo "${layer} $(git log --oneline | head -1 | awk '{ print $1; }')" >> ${YOCTO_COMMIT_LOG}
-
-        # until the nmap patches make it to thud
-        if [ ${layer} == "meta-openembedded" ]; then
-            git checkout local >> ${LOG} 2>&1
-        fi
 
         cd ..
     done
