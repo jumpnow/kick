@@ -4,11 +4,11 @@ BASE_DIR=${HOME}
 BUILD_DIR=${BASE_DIR}/kick
 LOG_DIR=${BUILD_DIR}/logs
 DATE=$(date +%Y%m%d)
-LOG=${LOG_DIR}/kick-${DATE}.log
+LOG=${LOG_DIR}/warrior-${DATE}.log
 
 LINUX_DIR=${BASE_DIR}/linux
-LINUX_BRANCHES="4.19 5.2 5.3"
-ACTIVE_LINUX_BRANCH="5.3"
+LINUX_BRANCHES="4.19 5.3 5.4"
+ACTIVE_LINUX_BRANCH="5.4"
 
 RPI_LINUX_BRANCH="4.19"
 
@@ -17,7 +17,7 @@ YOCTO_LAYERS="meta-openembedded meta-qt5 meta-raspberrypi meta-security"
 BOARDS="atom bbb duovero odroid-c2 rpi wandboard"
 
 YOCTO_DIR=${BASE_DIR}/poky-${YOCTO_BRANCH}
-YOCTO_COMMIT_LOG="${LOG_DIR}/yocto-commits-${DATE}"
+YOCTO_COMMIT_LOG="${LOG_DIR}/warrior-commits-${DATE}"
 
 update_linux_stable()
 {
