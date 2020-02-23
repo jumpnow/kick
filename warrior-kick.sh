@@ -13,7 +13,7 @@ ACTIVE_LINUX_BRANCH="5.4"
 RPI_LINUX_BRANCH="4.19"
 
 YOCTO_BRANCH="warrior"
-YOCTO_LAYERS="meta-openembedded meta-qt5 meta-raspberrypi meta-security"
+YOCTO_LAYERS="meta-openembedded meta-qt5 meta-raspberrypi meta-security meta-xilinx"
 BOARDS="atom bbb duovero odroid-c2 rpi wandboard"
 
 YOCTO_DIR=${BASE_DIR}/poky-${YOCTO_BRANCH}

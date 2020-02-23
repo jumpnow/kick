@@ -6,18 +6,18 @@ LOG_DIR=${BUILD_DIR}/logs
 DATE=$(date +%Y%m%d)
 LOG=${LOG_DIR}/zeus-${DATE}.log
 
-LINUX_DIR=${BASE_DIR}/linux
+LINUX_DIR=/src/linux
 LINUX_BRANCHES="4.19 5.4"
 ACTIVE_LINUX_BRANCH="5.4"
 
 RPI_LINUX_BRANCH="4.19"
 
 YOCTO_BRANCH="zeus"
-YOCTO_LAYERS="meta-openembedded meta-jumpnow meta-qt5 meta-raspberrypi meta-security"
-BOARDS="atom bbb duovero odroid-c2 rpi"
+YOCTO_LAYERS="meta-openembedded meta-jumpnow meta-qt5 meta-raspberrypi meta-security meta-xilinx"
+BOARDS="atom bbb duovero odroid-c2 rpi wandboard zynq7"
 
 YOCTO_DIR=${BASE_DIR}/poky-${YOCTO_BRANCH}
-YOCTO_COMMIT_LOG="${LOG_DIR}/zeus-commits-${DATE}"
+YOCTO_COMMIT_LOG="${LOG_DIR}/commits-${DATE}"
 
 update_linux_stable()
 {
@@ -92,12 +92,12 @@ check_kernels()
 {
     for board in ${BOARDS}
     do
-        if [ ! -d "${BASE_DIR}/zeus-${board}/meta-${board}" ]; then
+        if [ ! -d "${BASE_DIR}/${board}/meta-${board}" ]; then
             echo "Directory not found: ${BASE_DIR}/${board}/meta-${board}" >> ${LOG}
             exit 1
         fi
 
-        recipe_path="${BASE_DIR}/zeus-${board}/meta-${board}/recipes-kernel/linux"
+        recipe_path="${BASE_DIR}/${board}/meta-${board}/recipes-kernel/linux"
 
         if [ ! -d ${recipe_path} ]; then
             echo "Directory not found: ${recipe_path}" >> ${LOG}
@@ -129,21 +129,20 @@ check_kernels()
             for branch in ${LINUX_BRANCHES};
             do
                 if [ ! -f linux-stable_$branch.bb ]; then
-                    echo "Recipe not found: linux-stable_$branch.bb"
-                    exit 1
-                fi
-
-                latest_commit=$(cat ${LOG_DIR}/${branch}-${DATE} | head -1)
-                latest_version=$(cat ${LOG_DIR}/${branch}-${DATE} | tail -1)
-
-                current_commit=$(grep SRCREV linux-stable_${branch}.bb | awk '{ print $3 }' | tr -d '"')
-                current_version=$(grep PV linux-stable_${branch}.bb | awk '{ print $3 }' | tr -d '"')
-
-                if [ "${latest_commit}" = "${current_commit}" ]; then
-                    echo "$board kernel $branch OK" >> ${LOG}
+                    echo "Recipe not found for ${board}: linux-stable_$branch.bb  skipping check" >> ${LOG}
                 else
-                    echo "$board kernel $branch STALE" >> ${LOG}
-                fi
+                    latest_commit=$(cat ${LOG_DIR}/${branch}-${DATE} | head -1)
+                    latest_version=$(cat ${LOG_DIR}/${branch}-${DATE} | tail -1)
+
+                    current_commit=$(grep SRCREV linux-stable_${branch}.bb | awk '{ print $3 }' | tr -d '"')
+                    current_version=$(grep PV linux-stable_${branch}.bb | awk '{ print $3 }' | tr -d '"')
+
+                    if [ "${latest_commit}" = "${current_commit}" ]; then
+                        echo "$board kernel $branch OK" >> ${LOG}
+                    else
+                        echo "$board kernel $branch STALE" >> ${LOG}
+                    fi
+		fi
             done
         fi
     done
@@ -153,7 +152,7 @@ update_meta_layer_readmes()
 {
     for board in ${BOARDS}
     do
-        readme="${BASE_DIR}/zeus-${board}/meta-${board}/README.md"
+        readme="${BASE_DIR}/${board}/meta-${board}/README.md"
 
         commit=$(grep poky ${YOCTO_COMMIT_LOG})
 
@@ -196,7 +195,7 @@ update_meta_layer_kernels()
             grep -q "${board} kernel ${branch} STALE" $LOG
 
             if [ $? -eq 0 ]; then
-                recipe_path="${BASE_DIR}/zeus-${board}/meta-${board}/recipes-kernel/linux"
+                recipe_path="${BASE_DIR}/${board}/meta-${board}/recipes-kernel/linux"
                 echo "Updating recipe ${recipe_path}/linux-stable_${branch}.bb" >> ${LOG}
                 sed -i "s:^SRCREV.*:SRCREV = \"${latest_commit}\":" ${recipe_path}/linux-stable_${branch}.bb
                 sed -i "s:^PV.*:PV = \"${latest_version}\":" ${recipe_path}/linux-stable_${branch}.bb
@@ -213,7 +212,7 @@ update_meta_layer_kernels()
         latest_commit=$(cat ${LOG_DIR}/rpi-${branch}-${DATE} | head -1)
         latest_version=$(cat ${LOG_DIR}/rpi-${branch}-${DATE} | tail -1)
 
-        recipe_path="${BASE_DIR}/zeus-${board}/meta-${board}/recipes-kernel/linux"
+        recipe_path="${BASE_DIR}/${board}/meta-${board}/recipes-kernel/linux"
         echo "Updating recipe ${recipe_path}/linux-raspberrypi_${branch}.bbappend" >> ${LOG}
         sed -i "s:^SRCREV.*:SRCREV = \"${latest_commit}\":" ${recipe_path}/linux-raspberrypi_${branch}.bbappend
         sed -i "s:^LINUX_VERSION.*:LINUX_VERSION = \"${latest_version}\":" ${recipe_path}/linux-raspberrypi_${branch}.bbappend
@@ -232,7 +231,7 @@ rebuild_images()
 
         if [ $? -eq 0 ]; then
             echo "Rebuilding kernel and console image for ${board}" >> ${LOG}
-            result=$( source ${YOCTO_DIR}/oe-init-build-env ${BASE_DIR}/zeus-${board}/build && \
+            result=$( source ${YOCTO_DIR}/oe-init-build-env ${BASE_DIR}/${board}/build && \
               bitbake -c cleansstate console-image && \
               bitbake -c cleansstate virtual/kernel && \
               bitbake console-image && \
@@ -247,7 +246,7 @@ rebuild_images()
 
             if [ $? -eq 0 ]; then
                 echo "Rebuilding console image for ${board}" >> ${LOG}
-                result=$( source ${YOCTO_DIR}/oe-init-build-env ${BASE_DIR}/zeus-${board}/build && \
+                result=$( source ${YOCTO_DIR}/oe-init-build-env ${BASE_DIR}/${board}/build && \
                   bitbake -c cleansstate console-image && \
                   bitbake console-image && \
                   echo "Finished building console image for ${board}" >> ${LOG}; )
