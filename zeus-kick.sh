@@ -14,7 +14,7 @@ RPI_LINUX_BRANCH="4.19"
 
 YOCTO_BRANCH="zeus"
 YOCTO_LAYERS="meta-openembedded meta-jumpnow meta-qt5 meta-raspberrypi meta-security meta-xilinx"
-BOARDS="atom bbb duovero odroid-c2 rpi wandboard zynq7"
+BOARDS="atom bbb duovero odroid-c2 rpi rpi64 wandboard zynq7"
 
 YOCTO_DIR=${BASE_DIR}/poky-${YOCTO_BRANCH}
 YOCTO_COMMIT_LOG="${LOG_DIR}/commits-${DATE}"
@@ -28,14 +28,13 @@ update_linux_stable()
 
     cd ${LINUX_DIR}/linux-stable
 
-    for branch in ${LINUX_BRANCHES}
-    do
+    for branch in ${LINUX_BRANCHES}; do
         git checkout linux-${branch}.y >> ${LOG} 2>&1
         git pull >> ${LOG} 2>&1
         logfile=${LOG_DIR}/${branch}-${DATE}
         git log | head -1 | awk '{ print $2 }' > ${logfile}
         version=${branch}.$(grep SUBLEVEL Makefile | head -1 | awk '{ print $3 }')
-	echo ${version} >> ${logfile}
+        echo ${version} >> ${logfile}
     done
 }
 
@@ -71,8 +70,7 @@ update_layer_repos()
     git pull >> ${LOG} 2>&1
     echo "poky $(git log --oneline | head -1 | awk '{ print $1; }')" > ${YOCTO_COMMIT_LOG}
 
-    for layer in ${YOCTO_LAYERS}
-    do
+    for layer in ${YOCTO_LAYERS}; do
         if [ ! -d ${layer} ]; then
             echo "Path not found: ${layer}"
             exit 1
@@ -90,8 +88,7 @@ update_layer_repos()
 
 check_kernels()
 {
-    for board in ${BOARDS}
-    do
+    for board in ${BOARDS}; do
         if [ ! -d "${BASE_DIR}/${board}/meta-${board}" ]; then
             echo "Directory not found: ${BASE_DIR}/${board}/meta-${board}" >> ${LOG}
             exit 1
@@ -106,7 +103,7 @@ check_kernels()
 
         cd $recipe_path
 
-        if [ ${board} = "rpi" ]; then
+        if [ ${board} == "rpi" ] || [ ${board} == "rpi64" ]; then
             branch="${RPI_LINUX_BRANCH}"
 
             if [ ! -f linux-raspberrypi_${branch}.bbappend ]; then
@@ -142,7 +139,7 @@ check_kernels()
                     else
                         echo "$board kernel $branch STALE" >> ${LOG}
                     fi
-		fi
+    	fi
             done
         fi
     done
@@ -150,8 +147,7 @@ check_kernels()
 
 update_meta_layer_readmes()
 {
-    for board in ${BOARDS}
-    do
+    for board in ${BOARDS}; do
         readme="${BASE_DIR}/${board}/meta-${board}/README.md"
 
         commit=$(grep poky ${YOCTO_COMMIT_LOG})
@@ -163,8 +159,7 @@ update_meta_layer_readmes()
             sed -i "s:^    poky.*:    ${commit}:" ${readme}
         fi
 
-        for layer in ${YOCTO_LAYERS}
-        do
+        for layer in ${YOCTO_LAYERS}; do
             grep -q ${layer} ${readme}
 
             if [ $? -eq 0 ]; then
@@ -183,14 +178,14 @@ update_meta_layer_readmes()
 
 update_meta_layer_kernels()
 {
-    for branch in ${LINUX_BRANCHES}
-    do
+    for branch in ${LINUX_BRANCHES}; do
         latest_commit=$(cat ${LOG_DIR}/${branch}-${DATE} | head -1)
         latest_version=$(cat ${LOG_DIR}/${branch}-${DATE} | tail -1)
 
-        for board in ${BOARDS}
-        do
-            [ ${board} = "rpi" ] && continue
+        for board in ${BOARDS}; do
+            if [ ${board} == "rpi" ] || [ ${board} == "rpi64" ]; then
+                continue
+            fi
 
             grep -q "${board} kernel ${branch} STALE" $LOG
 
@@ -221,9 +216,8 @@ update_meta_layer_kernels()
 
 rebuild_images()
 {
-    for board in ${BOARDS}
-    do
-        if [ ${board} = "rpi" ]; then
+    for board in ${BOARDS}; do
+        if [ ${board} == "rpi" ] || [ ${board} == "rpi64" ]; then
             grep -q "${board} kernel ${RPI_LINUX_BRANCH} STALE" $LOG
         else
             grep -q "${board} kernel ${ACTIVE_LINUX_BRANCH} STALE" $LOG
