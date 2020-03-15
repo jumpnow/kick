@@ -14,7 +14,7 @@ RPI_LINUX_BRANCH="4.19"
 
 YOCTO_BRANCH="zeus"
 YOCTO_LAYERS="meta-openembedded meta-jumpnow meta-qt5 meta-raspberrypi meta-security meta-xilinx"
-BOARDS="atom bbb duovero odroid-c2 rpi rpi64 wandboard zynq7"
+BOARDS="atom bbb duovero odroid-c2 rpi rpi64 wandboard zynq7 zynqmp"
 
 YOCTO_DIR=${BASE_DIR}/poky-${YOCTO_BRANCH}
 YOCTO_COMMIT_LOG="${LOG_DIR}/commits-${DATE}"
@@ -108,19 +108,18 @@ check_kernels()
 
             if [ ! -f linux-raspberrypi_${branch}.bbappend ]; then
                 echo "Recipe not found: linux-raspberrypi_${branch}.bbappend"
-                exit 1
-            fi
-
-            latest_commit=$(cat ${LOG_DIR}/rpi-${branch}-${DATE} | head -1)
-            latest_version=$(cat ${LOG_DIR}/rpi-${branch}-${DATE} | tail -1)
-
-            current_commit=$(grep SRCREV linux-raspberrypi_${branch}.bbappend | awk '{ print $3 }' | tr -d '"')
-            current_version=$(grep LINUX_VERSION linux-raspberrypi_${branch}.bbappend | awk '{ print $3 }' | tr -d '"')
-
-            if [ "${latest_commit}" = "${current_commit}" ]; then
-                echo "$board kernel $branch OK" >> ${LOG}
             else
-                echo "$board kernel $branch STALE" >> ${LOG}
+                latest_commit=$(cat ${LOG_DIR}/rpi-${branch}-${DATE} | head -1)
+                latest_version=$(cat ${LOG_DIR}/rpi-${branch}-${DATE} | tail -1)
+
+                current_commit=$(grep SRCREV linux-raspberrypi_${branch}.bbappend | awk '{ print $3 }' | tr -d '"')
+                current_version=$(grep LINUX_VERSION linux-raspberrypi_${branch}.bbappend | awk '{ print $3 }' | tr -d '"')
+
+                if [ "${latest_commit}" == "${current_commit}" ]; then
+                    echo "$board kernel $branch OK" >> ${LOG}
+                else
+                    echo "$board kernel $branch STALE" >> ${LOG}
+		fi
             fi
         else
             for branch in ${LINUX_BRANCHES};
@@ -134,7 +133,7 @@ check_kernels()
                     current_commit=$(grep SRCREV linux-stable_${branch}.bb | awk '{ print $3 }' | tr -d '"')
                     current_version=$(grep PV linux-stable_${branch}.bb | awk '{ print $3 }' | tr -d '"')
 
-                    if [ "${latest_commit}" = "${current_commit}" ]; then
+                    if [ "${latest_commit}" == "${current_commit}" ]; then
                         echo "$board kernel $branch OK" >> ${LOG}
                     else
                         echo "$board kernel $branch STALE" >> ${LOG}
@@ -178,50 +177,50 @@ update_meta_layer_readmes()
 
 update_meta_layer_kernels()
 {
-    for branch in ${LINUX_BRANCHES}; do
-        latest_commit=$(cat ${LOG_DIR}/${branch}-${DATE} | head -1)
-        latest_version=$(cat ${LOG_DIR}/${branch}-${DATE} | tail -1)
+    for board in ${BOARDS}; do
+        if [ ${board} == "rpi" ] || [ ${board} == "rpi64" ]; then
+	    branch=${RPI_LINUX_BRANCH}
 
-        for board in ${BOARDS}; do
-            if [ ${board} == "rpi" ] || [ ${board} == "rpi64" ]; then
-                continue
-            fi
+            latest_commit=$(cat ${LOG_DIR}/rpi-${branch}-${DATE} | head -1)
+            latest_version=$(cat ${LOG_DIR}/rpi-${branch}-${DATE} | tail -1)
 
             grep -q "${board} kernel ${branch} STALE" $LOG
 
             if [ $? -eq 0 ]; then
                 recipe_path="${BASE_DIR}/${board}/meta-${board}/recipes-kernel/linux"
-                echo "Updating recipe ${recipe_path}/linux-stable_${branch}.bb" >> ${LOG}
-                sed -i "s:^SRCREV.*:SRCREV = \"${latest_commit}\":" ${recipe_path}/linux-stable_${branch}.bb
-                sed -i "s:^PV.*:PV = \"${latest_version}\":" ${recipe_path}/linux-stable_${branch}.bb
-            fi
-        done
+
+                echo "Updating recipe ${recipe_path}/linux-raspberrypi_${branch}.bbappend" >> ${LOG}
+                sed -i "s:^SRCREV.*:SRCREV = \"${latest_commit}\":" ${recipe_path}/linux-raspberrypi_${branch}.bbappend
+                sed -i "s:^LINUX_VERSION.*:LINUX_VERSION = \"${latest_version}\":" ${recipe_path}/linux-raspberrypi_${branch}.bbappend
+	    fi
+	else
+            for branch in ${LINUX_BRANCHES}; do
+                latest_commit=$(cat ${LOG_DIR}/${branch}-${DATE} | head -1)
+                latest_version=$(cat ${LOG_DIR}/${branch}-${DATE} | tail -1)
+
+                grep -q "${board} kernel ${branch} STALE" $LOG
+
+                if [ $? -eq 0 ]; then
+                    recipe_path="${BASE_DIR}/${board}/meta-${board}/recipes-kernel/linux"
+                    echo "Updating recipe ${recipe_path}/linux-stable_${branch}.bb" >> ${LOG}
+                    sed -i "s:^SRCREV.*:SRCREV = \"${latest_commit}\":" ${recipe_path}/linux-stable_${branch}.bb
+                    sed -i "s:^PV.*:PV = \"${latest_version}\":" ${recipe_path}/linux-stable_${branch}.bb
+		fi
+            done
+        fi
     done
-
-    branch=${RPI_LINUX_BRANCH}
-    board="rpi"
-
-    grep -q "${board} kernel ${branch} STALE" $LOG
-
-    if [ $? -eq 0 ]; then
-        latest_commit=$(cat ${LOG_DIR}/rpi-${branch}-${DATE} | head -1)
-        latest_version=$(cat ${LOG_DIR}/rpi-${branch}-${DATE} | tail -1)
-
-        recipe_path="${BASE_DIR}/${board}/meta-${board}/recipes-kernel/linux"
-        echo "Updating recipe ${recipe_path}/linux-raspberrypi_${branch}.bbappend" >> ${LOG}
-        sed -i "s:^SRCREV.*:SRCREV = \"${latest_commit}\":" ${recipe_path}/linux-raspberrypi_${branch}.bbappend
-        sed -i "s:^LINUX_VERSION.*:LINUX_VERSION = \"${latest_version}\":" ${recipe_path}/linux-raspberrypi_${branch}.bbappend
-    fi
 }
 
 rebuild_images()
 {
     for board in ${BOARDS}; do
         if [ ${board} == "rpi" ] || [ ${board} == "rpi64" ]; then
-            grep -q "${board} kernel ${RPI_LINUX_BRANCH} STALE" $LOG
+            branch=${RPI_LINUX_BRANCH}
         else
-            grep -q "${board} kernel ${ACTIVE_LINUX_BRANCH} STALE" $LOG
+            branch=${ACTIVE_LINUX_BRANCH}
         fi
+
+        grep -q "${board} kernel ${branch} STALE" $LOG
 
         if [ $? -eq 0 ]; then
             echo "Rebuilding kernel and console image for ${board}" >> ${LOG}
