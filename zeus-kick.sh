@@ -7,10 +7,10 @@ DATE=$(date +%Y%m%d)
 LOG=${LOG_DIR}/zeus-${DATE}.log
 
 LINUX_DIR=/src/linux
-LINUX_BRANCHES="4.19 5.4"
-ACTIVE_LINUX_BRANCH="5.4"
+LINUX_BRANCHES="4.19 5.4 5.6"
+ACTIVE_LINUX_BRANCH="5.6"
 
-RPI_LINUX_BRANCH="4.19"
+ACTIVE_RPI_LINUX_BRANCH="4.19"
 
 YOCTO_BRANCH="zeus"
 YOCTO_LAYERS="meta-openembedded meta-jumpnow meta-qt5 meta-raspberrypi meta-security meta-xilinx"
@@ -47,7 +47,7 @@ update_linux_rpi()
 
     cd ${LINUX_DIR}/linux-rpi
 
-    branch=${RPI_LINUX_BRANCH}
+    branch=${ACTIVE_RPI_LINUX_BRANCH}
     git checkout rpi-${branch}.y >> ${LOG} 2>&1
     git pull >> ${LOG} 2>&1
     logfile=${LOG_DIR}/rpi-${branch}-${DATE}
@@ -104,7 +104,7 @@ check_kernels()
         cd $recipe_path
 
         if [ ${board} == "rpi" ] || [ ${board} == "rpi64" ]; then
-            branch="${RPI_LINUX_BRANCH}"
+            branch="${ACTIVE_RPI_LINUX_BRANCH}"
 
             if [ ! -f linux-raspberrypi_${branch}.bbappend ]; then
                 echo "Recipe not found: linux-raspberrypi_${branch}.bbappend"
@@ -179,7 +179,7 @@ update_meta_layer_kernels()
 {
     for board in ${BOARDS}; do
         if [ ${board} == "rpi" ] || [ ${board} == "rpi64" ]; then
-	    branch=${RPI_LINUX_BRANCH}
+	    branch=${ACTIVE_RPI_LINUX_BRANCH}
 
             latest_commit=$(cat ${LOG_DIR}/rpi-${branch}-${DATE} | head -1)
             latest_version=$(cat ${LOG_DIR}/rpi-${branch}-${DATE} | tail -1)
@@ -215,7 +215,7 @@ rebuild_images()
 {
     for board in ${BOARDS}; do
         if [ ${board} == "rpi" ] || [ ${board} == "rpi64" ]; then
-            branch=${RPI_LINUX_BRANCH}
+            branch=${ACTIVE_RPI_LINUX_BRANCH}
         else
             branch=${ACTIVE_LINUX_BRANCH}
         fi
