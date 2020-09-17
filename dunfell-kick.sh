@@ -7,17 +7,16 @@ DATE=$(date +%Y%m%d)
 LOG=${LOG_DIR}/dunfell-${DATE}.log
 
 LINUX_DIR=/src/linux
-LINUX_BRANCHES="5.4 5.7"
-ACTIVE_LINUX_BRANCH="5.7"
+LINUX_BRANCHES="5.4 5.8"
+ACTIVE_LINUX_BRANCH="5.8"
 
-RPI_LINUX_BRANCHES="4.19 5.4"
+RPI_LINUX_BRANCHES="5.4"
 ACTIVE_RPI_LINUX_BRANCH="5.4"
 
 YOCTO_BRANCH="dunfell"
 YOCTO_LAYERS="meta-openembedded meta-jumpnow meta-qt5 meta-raspberrypi meta-security"
 BOARDS="atom bbb duovero odroid-c2 rpi rpi64 wandboard"
 
-#BOARD_PREFIX="dunfell-"
 BOARD_PREFIX=""
 
 YOCTO_DIR=${BASE_DIR}/poky-${YOCTO_BRANCH}
