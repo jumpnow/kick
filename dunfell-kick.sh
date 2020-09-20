@@ -53,14 +53,8 @@ update_linux_rpi()
 
     for branch in ${RPI_LINUX_BRANCHES}
     do
-        if [ ${branch} == "5.4" ]; then
-	    git checkout rpi-4.19.y >> ${LOG} 2>&1
-	    git branch -D rpi-5.4.y >> ${LOG} 2>&1
-	    git checkout -b rpi-5.4.y origin/rpi-5.4.y >> ${LOG} 2>&1
-	else
-            git checkout rpi-${branch}.y >> ${LOG} 2>&1
-            git pull >> ${LOG} 2>&1
-	fi
+        git checkout rpi-${branch}.y >> ${LOG} 2>&1
+        git pull >> ${LOG} 2>&1
 
         logfile=${LOG_DIR}/rpi-${branch}-${DATE}
         git log | head -1 | awk '{ print $2 }' > ${logfile}
