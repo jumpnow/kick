@@ -7,15 +7,15 @@ DATE=$(date +%Y%m%d)
 LOG=${LOG_DIR}/dunfell-${DATE}.log
 
 LINUX_DIR=/src/linux
-LINUX_BRANCHES="5.4 5.8"
-ACTIVE_LINUX_BRANCH="5.8"
+LINUX_BRANCHES="5.4 5.8 5.9"
+ACTIVE_LINUX_BRANCH="5.9"
 
 RPI_LINUX_BRANCHES="5.4"
 ACTIVE_RPI_LINUX_BRANCH="5.4"
 
 YOCTO_BRANCH="dunfell"
 YOCTO_LAYERS="meta-openembedded meta-jumpnow meta-qt5 meta-raspberrypi meta-security"
-BOARDS="atom bbb duovero odroid-c2 rpi rpi64 wandboard"
+BOARDS="atom bbb duovero odroid-c2 wandboard rpi rpi64"
 
 BOARD_PREFIX=""
 
@@ -118,7 +118,7 @@ check_kernels()
                     latest_commit=$(cat ${LOG_DIR}/rpi-${branch}-${DATE} | head -1)
                     latest_version=$(cat ${LOG_DIR}/rpi-${branch}-${DATE} | tail -1)
 
-                    current_commit=$(grep SRCREV linux-raspberrypi_${branch}.bbappend | awk '{ print $3 }' | tr -d '"')
+                    current_commit=$(egrep '^SRCREV ' linux-raspberrypi_${branch}.bbappend | awk '{ print $3 }' | tr -d '"')
                     current_version=$(grep LINUX_VERSION linux-raspberrypi_${branch}.bbappend | awk '{ print $3 }' | tr -d '"')
 
                     if [ "${latest_commit}" == "${current_commit}" ]; then
@@ -199,7 +199,7 @@ update_meta_layer_kernels()
 
                     if [ $? -eq 0 ]; then
                         echo "Updating recipe ${recipe_path}/linux-raspberrypi_${branch}.bbappend" >> ${LOG}
-                        sed -i "s:^SRCREV.*:SRCREV = \"${latest_commit}\":" ${recipe_path}/linux-raspberrypi_${branch}.bbappend
+                        sed -i "s:^SRCREV =.*:SRCREV = \"${latest_commit}\":" ${recipe_path}/linux-raspberrypi_${branch}.bbappend
                         sed -i "s:^LINUX_VERSION.*:LINUX_VERSION = \"${latest_version}\":" ${recipe_path}/linux-raspberrypi_${branch}.bbappend
                     fi
 	        fi

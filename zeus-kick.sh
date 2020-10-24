@@ -7,15 +7,20 @@ DATE=$(date +%Y%m%d)
 LOG=${LOG_DIR}/zeus-${DATE}.log
 
 LINUX_DIR=/src/linux
-LINUX_BRANCHES="4.19 5.4 5.6"
-ACTIVE_LINUX_BRANCH="5.6"
+LINUX_BRANCHES="5.4"
+ACTIVE_LINUX_BRANCH="5.4"
 
 RPI_LINUX_BRANCHES="4.19 5.4"
 ACTIVE_RPI_LINUX_BRANCH="4.19"
 
 YOCTO_BRANCH="zeus"
-YOCTO_LAYERS="meta-openembedded meta-jumpnow meta-qt5 meta-raspberrypi meta-security meta-xilinx"
-BOARDS="atom bbb duovero odroid-c2 rpi rpi64 wandboard zynq7 zynqmp"
+#YOCTO_LAYERS="meta-openembedded meta-jumpnow meta-qt5 meta-raspberrypi meta-security meta-xilinx"
+YOCTO_LAYERS="meta-openembedded meta-jumpnow meta-security meta-xilinx"
+#BOARDS="atom bbb duovero odroid-c2 rpi rpi64 wandboard zynq7 zynqmp"
+#BOARDS="bbb rpi rpi64 wandboard zynq7 zynqmp"
+BOARDS="zynq7 zynqmp"
+
+BOARD_PREFIX=""
 
 YOCTO_DIR=${BASE_DIR}/poky-${YOCTO_BRANCH}
 YOCTO_COMMIT_LOG="${LOG_DIR}/commits-${DATE}"
@@ -94,12 +99,12 @@ update_layer_repos()
 check_kernels()
 {
     for board in ${BOARDS}; do
-        if [ ! -d "${BASE_DIR}/${board}/meta-${board}" ]; then
-            echo "Directory not found: ${BASE_DIR}/${board}/meta-${board}" >> ${LOG}
+        if [ ! -d "${BASE_DIR}/${BOARD_PREFIX}${board}/meta-${board}" ]; then
+            echo "Directory not found: ${BASE_DIR}/${BOARD_PREFIX}${board}/meta-${board}" >> ${LOG}
             exit 1
         fi
 
-        recipe_path="${BASE_DIR}/${board}/meta-${board}/recipes-kernel/linux"
+        recipe_path="${BASE_DIR}/${BOARD_PREFIX}${board}/meta-${board}/recipes-kernel/linux"
 
         if [ ! -d ${recipe_path} ]; then
             echo "Directory not found: ${recipe_path}" >> ${LOG}
@@ -156,7 +161,7 @@ update_meta_layer_readmes()
 {
     for board in ${BOARDS}
     do
-        readme="${BASE_DIR}/${board}/meta-${board}/README.md"
+        readme="${BASE_DIR}/${BOARD_PREFIX}${board}/meta-${board}/README.md"
 
         commit=$(grep poky ${YOCTO_COMMIT_LOG})
 
@@ -190,6 +195,8 @@ update_meta_layer_kernels()
     for board in ${BOARDS}
     do
         if [ ${board} == "rpi" ] || [ ${board} == "rpi64" ]; then
+            recipe_path="${BASE_DIR}/${BOARD_PREFIX}${board}/meta-${board}/recipes-kernel/linux"
+
 	    for branch in ${RPI_LINUX_BRANCHES}
 	    do
 		if [ $branch == ${ACTIVE_RPI_LINUX_BRANCH} ]; then
@@ -198,15 +205,13 @@ update_meta_layer_kernels()
 		    ext="bb"
 		fi
 
-                if [ -f linux-raspberrypi_${branch}.${ext} ]; then
+                if [ -f ${recipe_path}/linux-raspberrypi_${branch}.${ext} ]; then
                     latest_commit=$(cat ${LOG_DIR}/rpi-${branch}-${DATE} | head -1)
                     latest_version=$(cat ${LOG_DIR}/rpi-${branch}-${DATE} | tail -1)
 
                     grep -q "${board} kernel ${branch} STALE" $LOG
 
                     if [ $? -eq 0 ]; then
-                        recipe_path="${BASE_DIR}/${board}/meta-${board}/recipes-kernel/linux"
-
                         echo "Updating recipe ${recipe_path}/linux-raspberrypi_${branch}.${ext}" >> ${LOG}
                         sed -i "s:^SRCREV.*:SRCREV = \"${latest_commit}\":" ${recipe_path}/linux-raspberrypi_${branch}.${ext}
                         sed -i "s:^LINUX_VERSION.*:LINUX_VERSION = \"${latest_version}\":" ${recipe_path}/linux-raspberrypi_${branch}.${ext}
@@ -222,7 +227,7 @@ update_meta_layer_kernels()
                 grep -q "${board} kernel ${branch} STALE" $LOG
 
                 if [ $? -eq 0 ]; then
-                    recipe_path="${BASE_DIR}/${board}/meta-${board}/recipes-kernel/linux"
+                    recipe_path="${BASE_DIR}/${BOARD_PREFIX}${board}/meta-${board}/recipes-kernel/linux"
                     echo "Updating recipe ${recipe_path}/linux-stable_${branch}.bb" >> ${LOG}
                     sed -i "s:^SRCREV.*:SRCREV = \"${latest_commit}\":" ${recipe_path}/linux-stable_${branch}.bb
                     sed -i "s:^PV.*:PV = \"${latest_version}\":" ${recipe_path}/linux-stable_${branch}.bb
@@ -246,7 +251,7 @@ rebuild_images()
 
         if [ $? -eq 0 ]; then
             echo "Rebuilding kernel and console image for ${board}" >> ${LOG}
-            result=$( source ${YOCTO_DIR}/oe-init-build-env ${BASE_DIR}/${board}/build && \
+            result=$( source ${YOCTO_DIR}/oe-init-build-env ${BASE_DIR}/${BOARD_PREFIX}${board}/build && \
               bitbake -c cleansstate console-image && \
               bitbake -c cleansstate virtual/kernel && \
               bitbake console-image && \
@@ -261,7 +266,7 @@ rebuild_images()
 
             if [ $? -eq 0 ]; then
                 echo "Rebuilding console image for ${board}" >> ${LOG}
-                result=$( source ${YOCTO_DIR}/oe-init-build-env ${BASE_DIR}/${board}/build && \
+                result=$( source ${YOCTO_DIR}/oe-init-build-env ${BASE_DIR}/${BOARD_PREFIX}${board}/build && \
                   bitbake -c cleansstate console-image && \
                   bitbake console-image && \
                   echo "Finished building console image for ${board}" >> ${LOG}; )
@@ -276,7 +281,8 @@ rebuild_images()
 
 cleanup_old_logs()
 {
-    find ${LOG_DIR} -mtime +1 -delete
+#    find ${LOG_DIR} -mtime +1 -delete
+    rm -f ${LOG_DIR}/*
 }
 
 ########################################
